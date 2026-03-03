@@ -2027,7 +2027,11 @@ TMonster::TMonster(int Race, int x, int y, int z, int Home, uint32 MasterID) :
 								0);
 			for(int i = 1; i <= RaceData[Race].Items; i += 1){
 				TItemData *ItemData = RaceData[Race].Item.at(i);
-				if(random(0, 999) > ItemData->Probability){
+				int AdjustedProbability = ItemData->Probability * LootRate;
+				if(AdjustedProbability > 1000){
+					AdjustedProbability = 1000;
+				}
+				if(random(0, 999) > AdjustedProbability){
 					continue;
 				}
 

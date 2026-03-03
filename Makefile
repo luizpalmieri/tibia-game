@@ -3,7 +3,7 @@ BUILDDIR = build
 OUTPUTEXE = game
 
 CC = g++
-CFLAGS = -m64 -fno-strict-aliasing -pedantic -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -Wno-format-truncation -std=c++11 -pthread -DOS_LINUX=1 -DARCH_X64=1
+CFLAGS = -m64 -fno-strict-aliasing -pedantic -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -Wno-format-truncation -std=c++11 -pthread -DOS_LINUX=1 -DARCH_X64=1 -DTIBIA772=1
 LFLAGS = -Wl,-t -lcrypto
 
 DEBUG ?= 0

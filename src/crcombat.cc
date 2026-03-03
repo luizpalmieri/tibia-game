@@ -4,6 +4,16 @@
 #include "magic.hh"
 #include "operate.hh"
 
+static int GetRate(TRateStage Stages[], int Count, int Level){
+	for(int i = 0; i < Count; i += 1){
+		TRateStage &Stage = Stages[i];
+		if(Level >= Stage.MinLevel && (Stage.MaxLevel == 0 || Level <= Stage.MaxLevel)){
+			return Stage.Rate;
+		}
+	}
+	return 1;
+}
+
 TCombat::TCombat(void){
 	this->Master = NULL;
 	this->EarliestAttackTime = 0;
@@ -226,8 +236,10 @@ int TCombat::GetAttackDamage(void){
 	}
 
 	TSkill *Skill = this->Master->Skills[SkillNr];
-	int Result = Skill->ProbeValue(MaxValue, this->LearningPoints > 0);
-	if(this->LearningPoints > 0){
+	bool ShouldIncrease = this->LearningPoints > 0;
+	int Result = Skill->ProbeValue(MaxValue, false);
+	if(ShouldIncrease){
+		Skill->Increase(MeleeRate);
 		this->LearningPoints -= 1;
 	}
 	return Result;
@@ -255,9 +267,10 @@ int TCombat::GetDefendDamage(void){
 	}
 
 	TSkill *Skill = this->Master->Skills[SkillNr];
-	bool Increase = (this->Shield != NONE && this->LearningPoints > 0);
-	int Result = Skill->ProbeValue(MaxValue, Increase);
-	if(Increase){
+	bool ShouldIncrease = (this->Shield != NONE && this->LearningPoints > 0);
+	int Result = Skill->ProbeValue(MaxValue, false);
+	if(ShouldIncrease){
+		Skill->Increase(ShieldingRate);
 		this->LearningPoints -= 1;
 	}
 
@@ -782,9 +795,11 @@ void TCombat::DistanceAttack(TCreature *Target){
 	}
 
 	int Difficulty = (Distance >= 2) ? Distance : 5;
+	bool ShouldIncrease = this->LearningPoints > 0;
 	bool Hit = Master->Skills[SKILL_DISTANCE]->Probe(
-			Difficulty * 15, HitChance, this->LearningPoints > 0);
-	if(this->LearningPoints > 0){
+			Difficulty * 15, HitChance, false);
+	if(ShouldIncrease){
+		Master->Skills[SKILL_DISTANCE]->Increase(DistanceRate);
 		this->LearningPoints -= 1;
 	}
 
@@ -910,14 +925,15 @@ void TCombat::DistributeExperiencePoints(uint32 Exp){
 			continue;
 		}
 
-		int Amount = (int)((Exp * this->CombatList[i].Damage) / this->CombatDamage);
+		int AttackerLevel = Attacker->Skills[SKILL_LEVEL]->Get();
+		int Rate = GetRate(ExperienceStages, ExperienceStageCount, AttackerLevel);
+		int Amount = (int)(((uint64)Exp * Rate * this->CombatList[i].Damage) / this->CombatDamage);
 		if(Master->Type == PLAYER && Attacker->Type == PLAYER){
 			if(((TPlayer*)Master)->InPartyWith((TPlayer*)Attacker, true)){
 				continue;
 			}
 
 			int MasterLevel = Master->Skills[SKILL_LEVEL]->Get();
-			int AttackerLevel = Attacker->Skills[SKILL_LEVEL]->Get();
 			int MaxLevel = (MasterLevel * 11) / 10;
 			if(AttackerLevel >= MaxLevel){
 				continue;
@@ -930,7 +946,6 @@ void TCombat::DistributeExperiencePoints(uint32 Exp){
 		if(Amount > 0){
 			if(Attacker->Type == PLAYER){
 				// NOTE(fusion): Enable soul regeneration.
-				int AttackerLevel = Attacker->Skills[SKILL_LEVEL]->Get();
 				if(Amount >= AttackerLevel){
 					int Interval = 120;
 					if(((TPlayer*)Attacker)->GetActivePromotion()){

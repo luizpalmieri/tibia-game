@@ -242,8 +242,8 @@ TCreature::~TCreature(void){
 					}
 
 					if(this->LoseInventory == LOSE_INVENTORY_ALL
-							|| Item.getObjectType().getFlag(CONTAINER)
-							|| random(0, 9) == 0){
+							|| (DropContainersOnDeath && Item.getObjectType().getFlag(CONTAINER))
+							|| (ItemDropChance > 0 && random(0, ItemDropChance - 1) == 0)){
 						::Move(0, Item, Corpse, -1, false, NONE);
 					}
 				}

@@ -340,8 +340,7 @@ void TPlayer::Death(void){
 		this->Combat.DistributeExperiencePoints(this->Skills[SKILL_LEVEL]->Exp / 20);
 	}
 
-	// TODO(fusion): Probably related to blessings?
-	int LossPercent = (this->GetActivePromotion() ? 7 : 10);
+	int LossPercent = (this->GetActivePromotion() ? DeathPenaltyPromotedPercent : DeathPenaltyPercent);
 	for(int QuestNr = 101; QuestNr <= 105; QuestNr += 1){
 		if(this->GetQuestValue(QuestNr) != 0){
 			this->SetQuestValue(QuestNr, 0);
